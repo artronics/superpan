@@ -1,13 +1,15 @@
 use std::result;
 
+use super::address;
+
 const SFD: u8 = 0xA7;
 
-// type Result<'a> = result::Result<Frame, MalformedFrame<'a>>;
 
 #[derive(Debug)]
 pub struct MalformedFrame {
     msg: String,
 }
+
 pub struct Frame {
     content: Vec<u8>,
     frame_ctrl: u16,
@@ -47,9 +49,14 @@ impl FrameCtrl for Frame {
     }
 }
 
-//TODO: Ali : haji implement fuctions whose returns `unimplemented!()
+//TODO: Ali : haji implement fuctions whose returns `unimplemented!()`
+// see ack_requested, also use eval_bool_inx to get bool value for specific bit index
+// for each func write a test. use test_frame_ctrl_is_ack_requested as reference
 pub trait FrameCtrl {
+    //frame_ctrl returns 16-bit (2 octeds) corrensponding "frame control" field
+    //see specification->5.2.1.1
     fn frame_ctrl(&self) -> u16;
+
     // bit 0,1,2 represents Frame Type.
     fn frame_type(&self) -> FrameType {
         match self.frame_ctrl() & 0x0007 {
@@ -60,13 +67,26 @@ pub trait FrameCtrl {
             _ => FrameType::Reserved,
         }
     }
-    fn is_ack_requested(&self) -> bool {
+    fn security_enabled(&self) -> bool {
+        unimplemented!();
+    }
+    fn frame_pending(&self) -> bool {
+        unimplemented!();
+    }
+    fn ack_requested(&self) -> bool {
         eval_bool_inx(self.frame_ctrl(), 5)
     }
-    fn is_frame_pending(&self) -> bool {
+    fn pan_id_compression(&self) -> bool {
+        unimplemented!();
+    }
+    fn dst_address_mode(&self) -> address::AddressMode {
+        unimplemented!();
+    }
+    fn src_address_mode(&self) -> address::AddressMode {
         unimplemented!();
     }
 }
+
 fn eval_bool_inx(value: u16, inx: isize) -> bool {
     if value >> inx & 1 == 1 { true } else { false }
 }
@@ -85,11 +105,11 @@ fn validate_frame(content: &Vec<u8>) -> Option<MalformedFrame> {
         }
 
         _ => None,
-
     }
 }
 
 #[cfg(test)]
+#[allow(unused_must_use)]
 mod test {
     use super::*;
 
@@ -110,6 +130,7 @@ mod test {
         let f = Frame::new(b).unwrap();
         assert!(f.frame_ctrl == 0xf2ea);
     }
+
     #[test]
     fn test_frame_ctrl_frame_type() {
         let mut f = FrameCtrlImpl { v: 0x0000 };
@@ -117,21 +138,22 @@ mod test {
         f = FrameCtrlImpl { v: 0x0002 };
         assert!(f.frame_type() == FrameType::Ack);
     }
+
     #[test]
-    fn test_frame_ctrl_is_ack_requested() {
+    fn test_frame_ctrl_ack_requested() {
         let mut f = FrameCtrlImpl { v: 0x0020 };
-        assert!(f.is_ack_requested() == true);
+        assert!(f.ack_requested() == true);
         f = FrameCtrlImpl { v: !0x0020 };
-        assert!(f.is_ack_requested() == false);
+        assert!(f.ack_requested() == false);
     }
 
     struct FrameCtrlImpl {
         v: u16,
     }
+
     impl FrameCtrl for FrameCtrlImpl {
         fn frame_ctrl(&self) -> u16 {
             self.v
         }
     }
-
 }
