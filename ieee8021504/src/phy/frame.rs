@@ -16,22 +16,59 @@ pub struct Frame {
 impl Frame {
     pub fn new(content: Vec<u8>) -> result::Result<Frame, MalformedFrame> {
         let vl = validate_frame(&content);
-        match vl {
-            Some(malformed_frame) => Err(malformed_frame),
-            None => {
-                // Frame Control field contains of two octeds at index 6 and 7
-                let b6 = content[6] as u16;
-                let b7 = content[7] as u16;
-                let frame_ctrl: u16 = b7 << 8 | b6;
+        if let Some(malformed_frame) = vl {
+            Err(malformed_frame)
+        } else {
+            // Frame Control field contains of two octeds at index 6 and 7
+            let b6 = content[6] as u16;
+            let b7 = content[7] as u16;
+            let frame_ctrl: u16 = b7 << 8 | b6;
 
-                Ok(Frame {
-                    content: content,
-                    frame_ctrl: frame_ctrl,
-                })
-
-            }
+            Ok(Frame {
+                content: content,
+                frame_ctrl: frame_ctrl,
+            })
         }
     }
+}
+
+#[derive(PartialEq)]
+pub enum FrameType {
+    Beacon,
+    Data,
+    Ack,
+    Command,
+    Reserved,
+}
+
+impl FrameCtrl for Frame {
+    fn frame_ctrl(&self) -> u16 {
+        self.frame_ctrl
+    }
+}
+
+//TODO: Ali : haji implement fuctions whose returns `unimplemented!()
+pub trait FrameCtrl {
+    fn frame_ctrl(&self) -> u16;
+    // bit 0,1,2 represents Frame Type.
+    fn frame_type(&self) -> FrameType {
+        match self.frame_ctrl() & 0x0007 {
+            0 => FrameType::Beacon,
+            1 => FrameType::Data,
+            2 => FrameType::Ack,
+            3 => FrameType::Command,
+            _ => FrameType::Reserved,
+        }
+    }
+    fn is_ack_requested(&self) -> bool {
+        eval_bool_inx(self.frame_ctrl(), 5)
+    }
+    fn is_frame_pending(&self) -> bool {
+        unimplemented!();
+    }
+}
+fn eval_bool_inx(value: u16, inx: isize) -> bool {
+    if value >> inx & 1 == 1 { true } else { false }
 }
 
 fn validate_frame(content: &Vec<u8>) -> Option<MalformedFrame> {
@@ -52,25 +89,6 @@ fn validate_frame(content: &Vec<u8>) -> Option<MalformedFrame> {
     }
 }
 
-impl FrameCtrl for Frame {
-    fn frame_ctrl(&self) -> u16 {
-        self.frame_ctrl
-    }
-}
-
-pub trait FrameCtrl {
-    fn frame_ctrl(&self) -> u16;
-    fn is_ack_requested(&self) -> bool {
-        eval_bool_inx(self.frame_ctrl(), 5)
-    }
-    fn is_frame_pending(&self) -> bool {
-        unimplemented!();
-    }
-}
-fn eval_bool_inx(value: u16, inx: isize) -> bool {
-    if value >> inx & 1 == 1 { true } else { false }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -79,8 +97,8 @@ mod test {
     fn test_validate_frame() {
         // a correct ack frame
         let mut b = vec![0, 0, 0, 0, super::SFD, 5, 0xea, 0xf2, 123, 0xff, 0xff];
-        let mut f = Frame::new(b).unwrap(); //this should not throw exp
-        //use 3 as PHR which is reserved
+        // Frame::new(b).unwrap(); //this should not throw exp
+        // use 3 as PHR which is reserved
         b = vec![0, 0, 0, 0, super::SFD, 3, 0xea, 0xf2, 123, 0xff, 0xff];
         let msg: &str = "PHR error, the length 3 is reserved.";
         Frame::new(b).map_err(|mf| assert!(mf.msg == msg));
@@ -91,6 +109,13 @@ mod test {
         let b = vec![0, 0, 0, 0, super::SFD, 5, 0xea, 0xf2, 123, 0xff, 0xff];
         let f = Frame::new(b).unwrap();
         assert!(f.frame_ctrl == 0xf2ea);
+    }
+    #[test]
+    fn test_frame_ctrl_frame_type() {
+        let mut f = FrameCtrlImpl { v: 0x0000 };
+        assert!(f.frame_type() == FrameType::Beacon);
+        f = FrameCtrlImpl { v: 0x0002 };
+        assert!(f.frame_type() == FrameType::Ack);
     }
     #[test]
     fn test_frame_ctrl_is_ack_requested() {
