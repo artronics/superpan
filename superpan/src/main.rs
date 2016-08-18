@@ -1,5 +1,7 @@
 extern crate ieee8021504;
 
+mod sim;
+
 use ieee8021504::phy::frame::{Frame, FrameCtrl};
 
 fn main() {

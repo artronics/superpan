@@ -5,4 +5,5 @@ authors = ["Seyed Jalal Hosseini <jalalhosseiny@gmail.com>"]
 
 [dependencies]
 ieee8021504 = {path = "../ieee8021504"}
+petgraph ="*"
 

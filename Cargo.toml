@@ -14,4 +14,5 @@ name = "superpan"
 
 [dependencies]
 ieee8021504 = {path = "ieee8021504"}
+petgraph ="*"
 
