@@ -5,8 +5,8 @@ const SFD: u8 = 0xA7;
 // type Result<'a> = result::Result<Frame, MalformedFrame<'a>>;
 
 #[derive(Debug)]
-pub struct MalformedFrame<'a> {
-    msg: &'a str,
+pub struct MalformedFrame {
+    msg: String,
 }
 pub struct Frame {
     content: Vec<u8>,
@@ -14,7 +14,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn new<'a>(content: Vec<u8>) -> result::Result<Frame, MalformedFrame<'a>> {
+    pub fn new(content: Vec<u8>) -> result::Result<Frame, MalformedFrame> {
         let vl = validate_frame(&content);
         match vl {
             Some(malformed_frame) => Err(malformed_frame),
@@ -34,21 +34,16 @@ impl Frame {
     }
 }
 
-fn validate_frame<'a>(content: &Vec<u8>) -> Option<MalformedFrame<'a>> {
+fn validate_frame(content: &Vec<u8>) -> Option<MalformedFrame> {
     // Minimum length for a frame belongs to ack frame with 11 bytes
     if content.len() < 11 {
-        return Some(MalformedFrame { msg: "a Frame must have at least 11 bytes." });
+        return Some(MalformedFrame { msg: "a Frame must have at least 11 bytes.".to_string() });
     }
     // index 5 is frame length,
     // The Frame Length field specifies the total number of octets contained in the PSDU (i.e., PHY payload).
     match content[5] {
         l @ 0...4 | l @ 6...8 => {
-            let a: &String = &format!("PHR error, the length {} is reserved.", l);
-            // let s: &'a str = &a[..];
-            let s: &'a str = &format!("PHR error, the length {} is reserved.", l);
-            // let s: &'a str = format!("PHR error, the length {} is reserved.", l);
-            // let msg: &'a str = &s[..];
-            // let s: &'a str = "heel";
+            let s: String = format!("PHR error, the length {} is reserved.", l);
             Some(MalformedFrame { msg: s })
         }
 
