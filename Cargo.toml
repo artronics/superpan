@@ -5,8 +5,10 @@ authors = ["Seyed Jalal Hosseini <jalalhosseiny@gmail.com>"]
 
 [workspace]
 
-[lib]
-path = "ieee8021504/src/lib.rs"
-[dependencies]
+[[bin]]
+path = "superpan/src/main.rs"
+name = "superpan"
 
+[dependencies]
+ieee8021504 = {path = "ieee8021504"}
 
