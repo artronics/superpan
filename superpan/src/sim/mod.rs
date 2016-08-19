@@ -1,17 +1,6 @@
-#[derive(Copy, Clone)]
-enum Tick {
-    Tx,
-    Rx,
-}
+pub mod device;
+
+#[derive(PartialEq)]
+pub struct Signal(u8);
 
 
-#[cfg(test)]
-#[allow(unused_must_use)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_pass_sim() {
-        assert!(true)
-    }
-}
