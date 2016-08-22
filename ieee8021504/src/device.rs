@@ -1,19 +1,23 @@
 use std::result::Result;
+use super::phy::PHY;
 
 const SHR: u8 = 0xA7;
-const aMaxPHYPacketSize: u8 = 127;
 
 pub struct Tick(u64);
+
 pub struct Signal {
     data: u8,
     tick: Tick,
 }
+
 pub struct Packet {
     bytes: Vec<u8>,
 }
+
 pub struct MalformedPacket {
     bytes: Vec<u8>,
 }
+
 pub struct Device {
     rx_packet: Packet,
 }
@@ -24,10 +28,12 @@ enum PacketState {
     PHR,
     PSDU,
 }
+
 pub struct PacketGenerator {
     rx_buff: Vec<u8>,
     cur_pck_state: PacketState,
 }
+
 impl PacketGenerator {
     pub fn new() -> PacketGenerator {
         PacketGenerator {
@@ -53,7 +59,6 @@ impl PacketGenerator {
                         }
                         _ => Ok(None), //Never happen
                     }
-
                 } else {
                     self.send_err()
                 }
@@ -69,7 +74,7 @@ impl PacketGenerator {
             PacketState::PHR => {
                 match data {
                     0...4 | 6...8 => self.send_err(),//reserved size
-                    x if x > aMaxPHYPacketSize => self.send_err(),
+                    x if x > PHY::aMaxPHYPacketSize => self.send_err(),
                     _ => {
                         self.cur_pck_state = PacketState::PSDU;
                         Ok(None)
@@ -96,7 +101,6 @@ impl PacketGenerator {
         Err(MalformedPacket { bytes: rx })
     }
 }
-
 
 
 #[cfg(test)]
@@ -128,6 +132,5 @@ mod test {
         let p = gen.gen_packet(0);
         assert!(p.is_ok()); //there is no err in pck
         p.map(|r| assert!(r.is_some())); //there must be a packet as output
-
     }
 }

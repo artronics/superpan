@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-pub mod stack;
-pub mod phy;
+mod app;
 pub mod mac;
+mod phy;
 pub mod device;
