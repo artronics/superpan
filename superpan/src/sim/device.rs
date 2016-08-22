@@ -1,127 +1,133 @@
-use super::Signal;
+use std::result::Result;
 
+const SHR: u8 = 0xA7;
+const aMaxPHYPacketSize: u8 = 127;
 
-// Simulator intracts with this trait
-pub trait Device {
-    /// Before calling init device is off. calling init sould not be considered as
-    /// first tick.
-    fn init(&mut self);
-
-    /// each tick is a symbol time in which, a device can transmit
-    /// its data to the simulator
-    fn tick(&mut self) -> Option<Signal>;
-
-    /// simulator calls this method to send a Signal to Device
-    /// during one tick, simulator might call this method zero or many times
-    /// a device should keep all the receiving signals however it should consume
-    /// one of them. In other word if a device gets more than one signal during each
-    /// tick, it means more than one device tried to send a Signal hence interference
-    fn receive(&mut self, Signal);
+pub struct Tick(u64);
+pub struct Signal {
+    data: u8,
+    tick: Tick,
+}
+pub struct Packet {
+    bytes: Vec<u8>,
+}
+pub struct MalformedPacket {
+    bytes: Vec<u8>,
+}
+pub struct Device {
+    rx_packet: Packet,
 }
 
-// PHY layer in stack (ieee8021502) intracts with this trait
-pub trait PhyDevice {
-    fn current_channel() -> u32;
+enum PacketState {
+    Preamble,
+    SHR,
+    PHR,
+    PSDU,
 }
-
-/// `TranceiverState` defines the behavior of transeiver during each simulator tick.
-/// `Transmitting` state has the highest priority. A device always transits to
-/// `Transmitting` state as soon as it finds `tx` not empty and consecuently the device will
-/// ignore all receiving data.
-pub enum TransceiverState {
-    Off,
-    Receiving,
-    Transmitting,
+pub struct PacketGenerator {
+    rx_buff: Vec<u8>,
+    cur_pck_state: PacketState,
 }
-
-pub enum ChannelState {
-    Busy,
-    Free,
-}
-
-pub struct PanDevice {
-    pub sim_tick: u64,
-    pub tx: Vec<Signal>,
-    pub rx: Vec<Signal>,
-
-    trans_state: TransceiverState,
-}
-
-impl PanDevice {
-    fn new() -> PanDevice {
-        let tx = Vec::with_capacity(10);
-        let rx = Vec::with_capacity(10);
-        PanDevice {
-            sim_tick: 0,
-            tx: tx,
-            rx: rx,
-            trans_state: TransceiverState::Off,
+impl PacketGenerator {
+    fn new() -> PacketGenerator {
+        PacketGenerator {
+            rx_buff: Vec::with_capacity(32),
+            cur_pck_state: PacketState::Preamble,
         }
     }
-}
-
-impl Device for PanDevice {
-    fn init(&mut self) {
-        self.trans_state = TransceiverState::Off;
+    pub fn reset(&mut self) {
+        self.rx_buff.clear();
+        self.cur_pck_state = PacketState::Preamble;
     }
-    fn tick(&mut self) -> Option<Signal> {
-        match self.trans_state {
-            TransceiverState::Off => None,
-            TransceiverState::Transmitting => {
-                // if tx is empty we should do a state transition
-                self.tx.pop().map(|x| {
-                    if self.tx.is_empty() {
-                        self.trans_state = TransceiverState::Receiving;
+    pub fn gen_packet(&mut self, data: u8) -> Result<Option<Packet>, MalformedPacket> {
+        self.rx_buff.push(data);
+        match self.cur_pck_state {
+            PacketState::Preamble => {
+                if data == 0 {
+                    // a preamble is always zero
+                    match self.rx_buff.len() {
+                        0...3 => Ok(None),
+                        4 => {
+                            self.cur_pck_state = PacketState::SHR;
+                            Ok(None)
+                        }
+                        _ => Ok(None), //Never happen
                     }
-                    x
-                })
+
+                } else {
+                    self.send_err()
+                }
             }
-            //            TransceiverState::Receiving => {
-            //                if self.rx.len() == 1 {
-            //                    //TODO write the receive logic
-            //                    unimplemented!();
-            //                    self.rx.clear();
-            //                    None
-            //                } else if self.rx.len() > 1 {
-            //                    panic!("Interference is not allowed!");
-            //                }
-            //                None
-            //            },
-            _ => None,
+            PacketState::SHR => {
+                if data == SHR {
+                    self.cur_pck_state = PacketState::PHR;
+                    Ok(None)
+                } else {
+                    self.send_err()
+                }
+            }
+            PacketState::PHR => {
+                match data {
+                    0...4 | 6...8 => self.send_err(),//reserved size
+                    x if x > aMaxPHYPacketSize => self.send_err(),
+                    _ => {
+                        self.cur_pck_state = PacketState::PSDU;
+                        Ok(None)
+                    }
+                }
+            }
+            PacketState::PSDU => {
+                // PSDU has a size of PHR (index->5) which means we should substract 6 elements from
+                // rx_buff
+                if self.rx_buff.len() - 6 == self.rx_buff[5] as usize {
+                    let bytes = self.rx_buff.clone();
+                    self.reset();
+                    Ok(Some(Packet { bytes: bytes })) //Here we have a good frame
+                } else {
+                    Ok(None)
+                }
+            }
         }
     }
 
-    fn receive(&mut self, sig: Signal) {
-        self.rx.push(sig);
+    fn send_err(&mut self) -> Result<Option<Packet>, MalformedPacket> {
+        let rx = self.rx_buff.clone();
+        self.reset();
+        Err(MalformedPacket { bytes: rx })
     }
 }
 
-/// `demodulator` resolves a list of received signals to one optional `Signal`.
-/// This is not OQPSK or any other low level demodulator, however all received
-/// signals during **one** tick must be passed to this function to resolve interference
-/// or be filtered by `current_channel` value
-fn demodulator(rx: &Vec<Signal>) -> Option<Signal> {
-    let s: Option<Signal>;
-    if rx.len() == 1 {
-        s = Some(rx[0]);
-        return s;
-    }
-    None
-}
+
 
 #[cfg(test)]
 #[allow(unused_must_use)]
 mod test {
     use super::*;
-    use super::super::Signal;
+    use super::SHR;
 
     #[test]
-    fn test_pass_sim() {
-        let mut d = PanDevice::new();
-        d.trans_state = TransceiverState::Transmitting;
-        d.tx.push(Signal(10));
-        let t = d.tick();
-        assert!(t == Some(Signal(10)));
-        assert!(d.trans_state as usize == TransceiverState::Receiving as usize);
+    fn test_preamble() {
+        let mut gen = PacketGenerator::new();
+        assert_good_seq(&mut gen);
+        // gen should reset itself after it's done with prev packet
+        assert_good_seq(&mut gen);
+        // after each err, gen should reset itself so be ready for next good seq
+        gen.gen_packet(12);//some errors
+        gen.gen_packet(43);
+        assert_good_seq(&mut gen);
+    }
+
+    fn assert_good_seq(gen: &mut PacketGenerator) {
+        let mut pck = vec![0, 0, 0, 0, SHR, 5, 0, 0, 123, 0]; //this packet is not complete. it needs one last ele
+        for x in pck {
+            let p = gen.gen_packet(x.clone());
+            assert!(p.is_ok()); //there is no err in pck
+            p.map(|r| assert!(r.is_none())); //pck is not complete yet
+        }
+        // Now complete the packet
+        let p = gen.gen_packet(0);
+        assert!(p.is_ok()); //there is no err in pck
+        p.map(|r| assert!(r.is_some())); //there must be a packet as output
+
     }
 }
