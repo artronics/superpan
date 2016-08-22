@@ -3,3 +3,4 @@
 pub mod stack;
 pub mod phy;
 pub mod mac;
+pub mod device;

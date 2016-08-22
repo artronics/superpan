@@ -29,7 +29,7 @@ pub struct PacketGenerator {
     cur_pck_state: PacketState,
 }
 impl PacketGenerator {
-    fn new() -> PacketGenerator {
+    pub fn new() -> PacketGenerator {
         PacketGenerator {
             rx_buff: Vec::with_capacity(32),
             cur_pck_state: PacketState::Preamble,
