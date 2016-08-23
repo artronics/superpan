@@ -1,9 +1,5 @@
 #![allow(dead_code)]
 
-#![allow(non_upper_case_globals)]
-#![allow(non_snake_case)]
-#![allow(non_camel_case_types)]
-
 use std::rc::Rc;
 use std::result;
 use device::Device;
@@ -31,15 +27,15 @@ impl IEEE8021504 {
 pub type MlmeConfirm<T> = result::Result<T, Status>;
 
 pub enum Status {
-    SUCCESS,
-    LIMIT_REACHED,
-    NO_BEACON,
-    SCAN_IN_PROGRESS,
-    COUNTER_ERROR,
-    FRAME_TOO_LONG,
-    UNAVAILABLE_KEY,
-    UNSUPPORTED_SECURITY,
-    INVALID_PARAMETER
+    Success,
+    //    LIMIT_REACHED,
+    //    NO_BEACON,
+    //    SCAN_IN_PROGRESS,
+    //    COUNTER_ERROR,
+    //    FRAME_TOO_LONG,
+    //    UNAVAILABLE_KEY,
+    //    UNSUPPORTED_SECURITY,
+    //    INVALID_PARAMETER
 }
 
 pub struct Mlme {
@@ -54,24 +50,14 @@ impl Mlme {
             pib: Pib::new_with_defaults(),
         }
     }
-    pub fn set_req(&self, setReq: PibAttribute) -> MlmeConfirm<PibAttribute> {
-        Ok(setReq)
+    pub fn set_req(&self, set_req: PibAttribute) -> MlmeConfirm<PibAttribute> {
+        Ok(set_req)
     }
 
-    pub fn reset_request(&self, resetReq: ResetReq) -> ResetCnf {
-        ResetCnf { status: Status::SUCCESS, }
+    pub fn reset_request(&self, reset_req: ResetReq) -> ResetCnf {
+        ResetCnf { status: Status::Success, }
     }
 }
-
-//pub struct SetReq<T> {
-//    pib_attribute: PIBAttribute,
-//    pib_attribute_value: T,
-//}
-//
-//pub struct SetCnf {
-//    status: Status,
-//    pib_attribute: PIBAttribute,
-//}
 
 pub struct ResetReq {
     pub set_default_pib: bool,
@@ -82,10 +68,10 @@ pub struct ResetCnf {
 }
 
 pub enum ScanType {
-    ED,
-    ACTIVE,
-    PASSIVE,
-    ORPHAN,
+    Ed,
+    Active,
+    Passive,
+    Orphan,
 }
 
 pub struct ScanReq {

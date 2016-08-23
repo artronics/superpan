@@ -1,4 +1,2 @@
 /// Mac constants
-pub mod MAC {
-    pub const aBaseSlotDuration: usize = 60;
-}
+pub const A_BASE_SLOT_DURATION: usize = 60;

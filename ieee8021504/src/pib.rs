@@ -1,4 +1,3 @@
-use device::Device;
 use super::MlmeConfirm;
 
 pub struct Pib {

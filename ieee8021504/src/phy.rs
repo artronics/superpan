@@ -1,5 +1,1 @@
-#[allow(non_snake_case)]
-#[allow(non_camel_case_types)]
-pub mod PHY {
-    pub const aMaxPHYPacketSize: u8 = 127;
-}
+pub const A_MAX_PHY_PACKET_SIZE: u8 = 127;

@@ -1,7 +1,6 @@
 use std::result::Result;
 use std::sync::mpsc::Sender;
-use std::marker::Sync;
-use super::phy::PHY;
+use super::phy;
 
 const SHR: u8 = 0xA7;
 
@@ -91,7 +90,7 @@ impl PacketGenerator {
             PacketState::PHR => {
                 match data {
                     0...4 | 6...8 => self.send_err(),//reserved size
-                    x if x > PHY::aMaxPHYPacketSize => self.send_err(),
+                    x if x > phy::A_MAX_PHY_PACKET_SIZE => self.send_err(),
                     _ => {
                         self.cur_pck_state = PacketState::PSDU;
                         Ok(None)

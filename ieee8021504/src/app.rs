@@ -1,5 +1,4 @@
 use std::sync::mpsc::Receiver;
-use std::thread;
 
 use IEEE8021504;
 use device::DevInterrupt;
@@ -30,9 +29,3 @@ impl App {
     }
 }
 
-fn check_status(status: Status) {
-    match status {
-        Status::SUCCESS => return,
-        _ => panic!("Status is not SUCCESS!"),//Don't mess with me!
-    }
-}
