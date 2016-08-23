@@ -13,7 +13,7 @@ fn main() {
     let (tx, rx) = channel();
 
     let dev = Rc::new(Device::new(tx));
-    let ieee = IEEE8021504 { device: dev.clone() };
+    let ieee = IEEE8021504::new(dev.clone());
     let app = App { ieee8021504: ieee, interrupt_ch: rx };
     dev.as_ref().send();
     app.start();
