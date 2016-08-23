@@ -1,11 +1,22 @@
 extern crate ieee8021504;
 
+use std::rc::Rc;
+use std::sync::mpsc::channel;
+
 mod sim;
 
-use ieee8021504::phy::frame::{Frame, FrameCtrl};
+use ieee8021504::device::Device;
+use ieee8021504::IEEE8021504;
+use ieee8021504::app::App;
 
 fn main() {
-    let f = Frame::new(vec!(0,0,0,0,0x7A,5,6,0,123,100,100)).unwrap();
+    let (tx, rx) = channel();
 
-    println!("Hello, world! {:?}", f.ack_requested());
+    let dev = Rc::new(Device::new(tx));
+    let ieee = IEEE8021504 { device: dev.clone() };
+    let app = App { ieee8021504: ieee, interrupt_ch: rx };
+    dev.as_ref().send();
+    app.start();
+
+    println!("Hello, world! ");
 }

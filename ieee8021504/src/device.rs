@@ -1,4 +1,6 @@
 use std::result::Result;
+use std::sync::mpsc::Sender;
+use std::marker::Sync;
 use super::phy::PHY;
 
 const SHR: u8 = 0xA7;
@@ -18,8 +20,23 @@ pub struct MalformedPacket {
     bytes: Vec<u8>,
 }
 
+pub enum DevInterrupt {
+    ScanRes = 1,
+}
+
 pub struct Device {
-    rx_packet: Packet,
+    interrupt_ch: Sender<DevInterrupt>,
+}
+
+impl Device {
+    pub fn new(interrupt_ch: Sender<DevInterrupt>) -> Device {
+        Device {
+            interrupt_ch: interrupt_ch,
+        }
+    }
+    pub fn send(&self) {
+        self.interrupt_ch.send(DevInterrupt::ScanRes);
+    }
 }
 
 enum PacketState {
