@@ -4,7 +4,7 @@ use IEEE8021504;
 use device::DevInterrupt;
 use device::DevInterrupt::{ScanRes};
 use pib::PibAttribute;
-use mac::{Status, ResetReq};
+use mac::{Mlme, Status, ResetReq};
 
 pub struct App {
     pub ieee8021504: IEEE8021504,

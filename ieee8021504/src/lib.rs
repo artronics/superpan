@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -10,6 +12,7 @@ pub mod app;
 pub mod mac;
 mod phy;
 mod pib;
+mod packet;
 pub mod device;
 
 pub struct IEEE8021504 {

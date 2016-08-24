@@ -1,7 +1,5 @@
 use std::result;
 
-use super::address;
-
 const SFD: u8 = 0xA7;
 
 
@@ -79,12 +77,12 @@ pub trait FrameCtrl {
     fn pan_id_compression(&self) -> bool {
         unimplemented!();
     }
-    fn dst_address_mode(&self) -> address::AddressMode {
-        unimplemented!();
-    }
-    fn src_address_mode(&self) -> address::AddressMode {
-        unimplemented!();
-    }
+    //    fn dst_address_mode(&self) -> address::AddressMode {
+    //        unimplemented!();
+    //    }
+    //    fn src_address_mode(&self) -> address::AddressMode {
+    //        unimplemented!();
+    //    }
 }
 
 fn eval_bool_inx(value: u16, inx: isize) -> bool {

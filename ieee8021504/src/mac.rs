@@ -17,6 +17,7 @@ impl Mac {
             pib: Pib::new_with_defaults(),
         }
     }
+    fn send_beacon_req() {}
 }
 
 impl Mlme for Mac {
