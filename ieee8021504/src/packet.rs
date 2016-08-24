@@ -66,16 +66,16 @@ pub trait FrameCtrl {
         }
     }
     fn security_enabled(&self) -> bool {
-        unimplemented!();
+        eval_bool_inx(self.frame_ctrl(), 3)
     }
     fn frame_pending(&self) -> bool {
-        unimplemented!();
+        eval_bool_inx(self.frame_ctrl(), 4)
     }
     fn ack_requested(&self) -> bool {
         eval_bool_inx(self.frame_ctrl(), 5)
     }
     fn pan_id_compression(&self) -> bool {
-        unimplemented!();
+        eval_bool_inx(self.frame_ctrl(), 6)
     }
     //    fn dst_address_mode(&self) -> address::AddressMode {
     //        unimplemented!();
@@ -136,14 +136,36 @@ mod test {
         f = FrameCtrlImpl { v: 0x0002 };
         assert!(f.frame_type() == FrameType::Ack);
     }
-
     #[test]
-    fn test_frame_ctrl_ack_requested() {
-        let mut f = FrameCtrlImpl { v: 0x0020 };
-        assert!(f.ack_requested() == true);
-        f = FrameCtrlImpl { v: !0x0020 };
-        assert!(f.ack_requested() == false);
-    }
+        fn test_frame_ctrl_security_enabled() {
+            let mut f = FrameCtrlImpl { v: 0x0008 };
+            assert!(f.security_enabled() == true);
+            f = FrameCtrlImpl { v: !0x0008 };
+            assert!(f.security_enabled() == false);
+        }
+        #[test]
+        fn test_frame_ctrl_frame_pending() {
+            let mut f = FrameCtrlImpl { v: 0x0010 };
+            assert!(f.frame_pending() == true);
+            f = FrameCtrlImpl { v: !0x0010 };
+            assert!(f.frame_pending() == false);
+        }
+
+        #[test]
+        fn test_frame_ctrl_ack_requested() {
+            let mut f = FrameCtrlImpl { v: 0x0020 };
+            assert!(f.ack_requested() == true);
+            f = FrameCtrlImpl { v: !0x0020 };
+            assert!(f.ack_requested() == false);
+        }
+        #[test]
+        fn test_frame_ctrl_pan_id_compression() {
+            let mut f = FrameCtrlImpl { v: 0x0040 };
+            assert!(f.pan_id_compression() == true);
+            f = FrameCtrlImpl { v: !0x0040 };
+            assert!(f.pan_id_compression() == false);
+        }
+
 
     struct FrameCtrlImpl {
         v: u16,
