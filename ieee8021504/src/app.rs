@@ -25,7 +25,7 @@ impl App {
     }
     fn init(&mut self) {
         //first reset mlme
-        self.ieee8021504.mlme.reset(ResetReq { set_default_pib: true });
+        self.ieee8021504.mac.mlme_reset(ResetReq { set_default_pib: true });
     }
 }
 

@@ -13,17 +13,13 @@ mod pib;
 pub mod device;
 
 pub struct IEEE8021504 {
-    pub mlme: Mlme,
-    pub mcps: Mcps,
+    pub mac: Mac,
 }
 
 impl IEEE8021504 {
     pub fn new(device: Rc<Device>) -> IEEE8021504 {
-        let mlme_mac = Rc::new(RefCell::new(Mac::new(device)));
-        let mcps_mac = mlme_mac.clone();
         IEEE8021504 {
-            mlme: Mlme::new(mlme_mac),
-            mcps: Mcps::new(mcps_mac),
+            mac: Mac::new(device),
         }
     }
 }

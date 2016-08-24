@@ -19,6 +19,19 @@ impl Mac {
     }
 }
 
+impl Mlme for Mac {
+    fn mlme_get(&self, get_req: PibAttribute) -> MlmeConfirm<PibAttribute> {
+        self.pib.get(get_req)
+    }
+    fn mlme_set(&mut self, set_req: PibAttribute) -> MlmeConfirm<PibAttribute> {
+        self.pib.set(set_req)
+    }
+    fn mlme_reset(&mut self, reset_req: ResetReq) -> MlmeConfirm<ResetCnf> {
+        unimplemented!()
+    }
+}
+
+
 pub type MlmeConfirm<T> = result::Result<T, Status>;
 
 pub enum Status {
@@ -33,39 +46,13 @@ pub enum Status {
     //    INVALID_PARAMETER
 }
 
-pub struct Mlme {
-    mac: Rc<RefCell<Mac>>
+pub trait Mlme {
+    fn mlme_get(&self, get_req: PibAttribute) -> MlmeConfirm<PibAttribute>;
+    fn mlme_set(&mut self, set_req: PibAttribute) -> MlmeConfirm<PibAttribute>;
+    fn mlme_reset(&mut self, reset_req: ResetReq) -> MlmeConfirm<ResetCnf>;
 }
 
-pub struct Mcps {
-    mac: Rc<RefCell<Mac>>
-}
-
-impl Mlme {
-    pub fn new(mac: Rc<RefCell<Mac>>) -> Mlme {
-        Mlme {
-            mac: mac
-        }
-    }
-    pub fn set(&mut self, set_req: PibAttribute) -> MlmeConfirm<PibAttribute> {
-        self.mac.borrow_mut().pib.set(set_req)
-    }
-    pub fn get(&self, get_req: PibAttribute) -> MlmeConfirm<PibAttribute> {
-        self.mac.borrow().pib.get(get_req)
-    }
-    pub fn reset(&mut self, reset_req: ResetReq) -> MlmeConfirm<ResetCnf> {
-        self.mac.borrow_mut().pib.reset(reset_req)
-    }
-    //    pub fn scan(&self, scan_req: ScanReq) -> MlmeConfirm<ScanCnf> {}
-}
-
-impl Mcps {
-    pub fn new(mac: Rc<RefCell<Mac>>) -> Mcps {
-        Mcps {
-            mac: mac,
-        }
-    }
-}
+pub trait Mcps {}
 
 
 pub struct ResetReq {
